@@ -1,0 +1,30 @@
+joy_node:
+  ros__parameters:
+    device_id: 0
+    deadzone: 0.05
+    autorepeat_rate: 20.0
+
+teleop_node:
+  ros__parameters:
+    axis_linear: 
+      x: 1  # Left stick vertical - forward/backward
+      y: 0  # Left stick horizontal - strafe left/right
+    scale_linear:
+      x: 0.25
+      y: 0.25
+    scale_linear_turbo:
+      x: 0.5
+      y: 0.5
+
+    axis_angular: 
+      yaw: 2  # Right stick horizontal - rotation
+    scale_angular:
+      yaw: 0.25
+    scale_angular_turbo:
+      yaw: 0.5
+  
+
+    enable_button: 6  # change to your Xbox enable button
+    enable_turbo_button: 7 
+
+    require_enable_button: true
