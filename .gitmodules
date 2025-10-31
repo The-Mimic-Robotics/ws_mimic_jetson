@@ -1,0 +1,4 @@
+[submodule "bimanual-lerobot"]
+	path = bimanual-lerobot
+	url = git@github.com:The-Mimic-Robotics/bimanual-lerobot.git
+	branch = batyr
