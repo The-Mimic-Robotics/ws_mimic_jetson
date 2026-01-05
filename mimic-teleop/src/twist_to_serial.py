@@ -5,6 +5,7 @@ from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import TransformStamped
+from sensor_msgs.msg import JointState
 from tf2_ros import TransformBroadcaster
 import serial
 import time
@@ -44,7 +45,12 @@ class TwistToSerial(Node):
         
         # Publishers for odometry
         self.odom_pub = self.create_publisher(Odometry, 'odom', 10)
+        self.joint_state_pub = self.create_publisher(JointState, 'joint_states', 10)
         self.tf_broadcaster = TransformBroadcaster(self)
+        
+        # Robot specifications from ESP32 firmware
+        self.ENCODER_PPR = 6256  # 17 PPR × 4 (quadrature) × 92 (gear ratio)
+        self.WHEEL_RADIUS = 0.0762  # meters (152mm diameter wheels)
         
         self.get_logger().info(f'Listening to {twist_topic} and forwarding to ESP32')
         
@@ -53,22 +59,19 @@ class TwistToSerial(Node):
         self.safety_timer = self.create_timer(0.1, self.safety_check)  # 10Hz safety check
         
         # Timer for reading odometry from ESP32
-        self.odom_timer = self.create_timer(0.05, self.read_odometry)  # 20Hz odometry read
+        self.odom_timer = self.create_timer(0.01, self.read_odometry)  # 100Hz odometry read (matches reference)
         
     def twist_callback(self, msg):
         """Convert ROS2 Twist message to serial string and send to ESP32"""
         
         # Extract twist values
         linear_x = msg.linear.x    # forward/backward
-        linear_y = msg.linear.y    # strafe left/right (usually 0 for diff drive)
-        angular_z = msg.angular.z  # rotation
+        linear_y = msg.linear.y    # strafe left/right
+        angular_z = msg.angular.z  # rotation (counterclockwise positive)
         
-        corrected_linear_y = -linear_y  # Keep strafing as is
-        corrected_angular_z = -angular_z  # Invert rotation direction
-        
-        
-        # Create serial message: "TWIST,linear_x,linear_y,angular_z\n"
-        serial_msg = f"TWIST,{linear_x:.3f},{corrected_linear_y:.3f},{corrected_angular_z:.3f}\n"
+        # Send directly to ESP32 without corrections
+        # ESP32 should handle proper motor directions
+        serial_msg = f"TWIST,{linear_x:.3f},{linear_y:.3f},{angular_z:.3f}\n"
         
         try:
             self.serial_conn.write(serial_msg.encode('utf-8'))
@@ -96,10 +99,14 @@ class TwistToSerial(Node):
     def read_odometry(self):
         """Read odometry data from ESP32 serial port"""
         try:
-            if self.serial_conn.in_waiting:
-                line = self.serial_conn.readline().decode('utf-8').strip()
+            # Read all available data to prevent buffer buildup
+            while self.serial_conn.in_waiting > 0:
+                line = self.serial_conn.readline().decode('utf-8', errors='ignore').strip()
                 if line.startswith('ODOM,'):
                     self.parse_and_publish_odom(line)
+                elif line:
+                    # Log other messages from ESP32
+                    self.get_logger().debug(f'ESP32: {line}')
         except Exception as e:
             self.get_logger().error(f'Failed to read odometry: {e}')
     
@@ -116,12 +123,18 @@ class TwistToSerial(Node):
             
             # Parse odometry values
             x = float(parts[1])
-            y = float(parts[2])
-            theta = float(parts[3])
-            vx = float(parts[4])
-            vy = float(parts[5])
-            omega = float(parts[6])
+            y = -float(parts[2])      # INVERT: ESP32 odometry has opposite sign for lateral position
+            theta = -float(parts[3])  # INVERT: ESP32 odometry has opposite sign for rotation angle
+            
+            vx = float(parts[4])  
+            vy = -float(parts[5])   # INVERT: ESP32 odometry has opposite sign for lateral
+            omega = -float(parts[6]) # INVERT: ESP32 odometry has opposite sign for rotation
+
             # enc1-4 are in parts[7:11] if needed for debugging
+            enc_fl = int(parts[7])   # Front Left encoder
+            enc_fr = int(parts[8])   # Front Right encoder
+            enc_bl = int(parts[9])   # Back Left encoder
+            enc_br = int(parts[10])  # Back Right encoder
             
             # Create and publish odometry message
             odom = Odometry()
@@ -140,10 +153,30 @@ class TwistToSerial(Node):
             odom.pose.pose.orientation.z = math.sin(theta / 2.0)
             odom.pose.pose.orientation.w = math.cos(theta / 2.0)
             
-            # Velocity (in robot frame for mecanum)
-            odom.twist.twist.linear.x = vy  # forward
-            odom.twist.twist.linear.y = vx  # strafe
+            # Velocity (in robot's body frame)
+            odom.twist.twist.linear.x = vx  # forward velocity
+            odom.twist.twist.linear.y = vy  # strafe velocity
             odom.twist.twist.angular.z = omega
+            
+            # Covariance matrices (rough estimates for encoder-based odometry)
+            # Format: [x, y, z, rotation_x, rotation_y, rotation_z]
+            odom.pose.covariance = [
+                0.001, 0.0,   0.0, 0.0, 0.0, 0.0,    # x variance
+                0.0,   0.001, 0.0, 0.0, 0.0, 0.0,    # y variance
+                0.0,   0.0,   0.0, 0.0, 0.0, 0.0,    # z (not used)
+                0.0,   0.0,   0.0, 0.0, 0.0, 0.0,    # roll (not used)
+                0.0,   0.0,   0.0, 0.0, 0.0, 0.0,    # pitch (not used)
+                0.0,   0.0,   0.0, 0.0, 0.0, 0.03    # yaw variance
+            ]
+            
+            odom.twist.covariance = [
+                0.001, 0.0,   0.0, 0.0, 0.0, 0.0,    # vx variance
+                0.0,   0.001, 0.0, 0.0, 0.0, 0.0,    # vy variance
+                0.0,   0.0,   0.0, 0.0, 0.0, 0.0,    # vz (not used)
+                0.0,   0.0,   0.0, 0.0, 0.0, 0.0,    # roll rate (not used)
+                0.0,   0.0,   0.0, 0.0, 0.0, 0.0,    # pitch rate (not used)
+                0.0,   0.0,   0.0, 0.0, 0.0, 0.03    # yaw rate variance
+            ]
             
             # Publish odometry
             self.odom_pub.publish(odom)
@@ -159,8 +192,45 @@ class TwistToSerial(Node):
             t.transform.rotation = odom.pose.pose.orientation
             self.tf_broadcaster.sendTransform(t)
             
+            # Publish joint states for wheel visualization
+            self.publish_joint_states(enc_fl, enc_fr, enc_bl, enc_br, odom.header.stamp)
+            
         except (ValueError, IndexError) as e:
             self.get_logger().error(f'Failed to parse odometry data: {e}')
+    
+    def publish_joint_states(self, enc_fl, enc_fr, enc_bl, enc_br, timestamp):
+        """Convert encoder counts to wheel joint positions and publish
+        
+        Args:
+            enc_fl, enc_fr, enc_bl, enc_br: Encoder counts from ESP32
+            timestamp: ROS2 timestamp to synchronize with odometry
+        """
+        joint_state = JointState()
+        joint_state.header.stamp = timestamp
+        joint_state.header.frame_id = ''
+        
+        # Joint names must match URDF
+        joint_state.name = [
+            'front_left_wheel_joint',
+            'front_right_wheel_joint',
+            'rear_left_wheel_joint',
+            'rear_right_wheel_joint'
+        ]
+        
+        # Convert encoder counts to radians
+        # Position (radians) = (encoder_count / ENCODER_PPR) * 2π
+        joint_state.position = [
+            (enc_fl / self.ENCODER_PPR) * 2.0 * math.pi,  # FL
+            (enc_fr / self.ENCODER_PPR) * 2.0 * math.pi,  # FR
+            (enc_bl / self.ENCODER_PPR) * 2.0 * math.pi,  # BL
+            (enc_br / self.ENCODER_PPR) * 2.0 * math.pi   # BR
+        ]
+        
+        # Velocities (optional, can calculate from position delta)
+        joint_state.velocity = []
+        joint_state.effort = []
+        
+        self.joint_state_pub.publish(joint_state)
     
     def destroy_node(self):
         """Clean up when shutting down"""
