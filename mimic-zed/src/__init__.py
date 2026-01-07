@@ -1,1 +1,0 @@
-# mimic_zed package

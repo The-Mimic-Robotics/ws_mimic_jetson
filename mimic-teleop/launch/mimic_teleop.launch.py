@@ -13,7 +13,7 @@ def generate_launch_description():
     # Launch arguments
     esp32_port_arg = DeclareLaunchArgument(
         'esp32_port',
-        default_value='/dev/ttyUSB0',
+        default_value='/dev/esp32',
         description='ESP32 serial port'
     )
     

@@ -20,11 +20,13 @@ class TwistToSerial(Node):
         self.declare_parameter('serial_port', '/dev/ttyUSB0')  # ESP32 USB port
         self.declare_parameter('baud_rate', 115200)
         self.declare_parameter('twist_topic', '/cmd_vel')
+        self.declare_parameter('publish_tf', True)  # REQUIRED for Nav2 - wheel odom is primary TF source
         
         # Get parameters
         serial_port = self.get_parameter('serial_port').get_parameter_value().string_value
         baud_rate = self.get_parameter('baud_rate').get_parameter_value().integer_value
         twist_topic = self.get_parameter('twist_topic').get_parameter_value().string_value
+        self.publish_tf = self.get_parameter('publish_tf').get_parameter_value().bool_value
         
         # Initialize serial connection
         try:
@@ -53,6 +55,7 @@ class TwistToSerial(Node):
         self.WHEEL_RADIUS = 0.0762  # meters (152mm diameter wheels)
         
         self.get_logger().info(f'Listening to {twist_topic} and forwarding to ESP32')
+        self.get_logger().info(f'TF Publishing: {"ENABLED (wheel odom is primary TF source)" if self.publish_tf else "DISABLED"}')
         
         # Safety timer - send zero commands if no messages received
         self.last_message_time = time.time()
@@ -181,16 +184,19 @@ class TwistToSerial(Node):
             # Publish odometry
             self.odom_pub.publish(odom)
             
-            # Publish TF transform (odom -> base_link)
-            t = TransformStamped()
-            t.header.stamp = odom.header.stamp
-            t.header.frame_id = 'odom'
-            t.child_frame_id = 'base_link'
-            t.transform.translation.x = x
-            t.transform.translation.y = y
-            t.transform.translation.z = 0.0
-            t.transform.rotation = odom.pose.pose.orientation
-            self.tf_broadcaster.sendTransform(t)
+            # Publish TF transform (odom -> base_link) - PRIMARY TF SOURCE FOR NAV2
+            # This is the standard approach: wheel odometry provides the TF tree root
+            # ZED only publishes odometry TOPIC (/zed/zed_node/odom), not TF
+            if self.publish_tf:
+                t = TransformStamped()
+                t.header.stamp = odom.header.stamp
+                t.header.frame_id = 'odom'
+                t.child_frame_id = 'base_link'
+                t.transform.translation.x = x
+                t.transform.translation.y = y
+                t.transform.translation.z = 0.0
+                t.transform.rotation = odom.pose.pose.orientation
+                self.tf_broadcaster.sendTransform(t)
             
             # Publish joint states for wheel visualization
             self.publish_joint_states(enc_fl, enc_fr, enc_bl, enc_br, odom.header.stamp)

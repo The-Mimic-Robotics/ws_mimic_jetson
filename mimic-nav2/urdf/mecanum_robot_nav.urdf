@@ -1,0 +1,274 @@
+<?xml version="1.0"?>
+<robot name="mecanum_robot">
+  
+  <!-- 
+    Robot Specifications from ESP32 Firmware:
+    - Wheelbase Width: 468.5mm (0.4685m) center-to-center L/R
+    - Wheelbase Length: 420mm (0.420m) center-to-center F/B  
+    - Wheel Radius: 76.2mm (0.0762m) - 152mm diameter
+    - Chassis: 460mm x 360mm aluminum extrusion
+  -->
+  
+  <!-- Base Link - Main body of the robot -->
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="0.46 0.36 0.1"/>  <!-- 460mm x 360mm x 100mm -->
+      </geometry>
+      <origin xyz="0 0 0.05" rpy="0 0 0"/>
+      <material name="blue">
+        <color rgba="0.2 0.4 0.8 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.46 0.36 0.1"/>
+      </geometry>
+      <origin xyz="0 0 0.05" rpy="0 0 0"/>
+    </collision>
+    <inertial>
+      <mass value="15.0"/>  <!-- Approximate robot mass -->
+      <origin xyz="0 0 0.05" rpy="0 0 0"/>
+      <inertia ixx="0.5" ixy="0.0" ixz="0.0" iyy="0.5" iyz="0.0" izz="0.8"/>
+    </inertial>
+  </link>
+
+  <!-- Front Left Wheel -->
+  <link name="front_left_wheel">
+    <visual>
+      <geometry>
+        <cylinder radius="0.0762" length="0.0555"/>  <!-- 76.2mm radius, 55.5mm width -->
+      </geometry>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <material name="black">
+        <color rgba="0.1 0.1 0.1 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.0762" length="0.0555"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+    </collision>
+    <inertial>
+      <mass value="1.0"/>
+      <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
+    </inertial>
+  </link>
+
+  <joint name="front_left_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="front_left_wheel"/>
+    <origin xyz="0.21 0.23425 0" rpy="0 0 0"/>  <!-- F/B: 420mm/2=210mm, L/R: 468.5mm/2=234.25mm -->
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <!-- Front Right Wheel -->
+  <link name="front_right_wheel">
+    <visual>
+      <geometry>
+        <cylinder radius="0.0762" length="0.0555"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <material name="black">
+        <color rgba="0.1 0.1 0.1 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.0762" length="0.0555"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+    </collision>
+    <inertial>
+      <mass value="1.0"/>
+      <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
+    </inertial>
+  </link>
+
+  <joint name="front_right_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="front_right_wheel"/>
+    <origin xyz="0.21 -0.23425 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <!-- Rear Left Wheel -->
+  <link name="rear_left_wheel">
+    <visual>
+      <geometry>
+        <cylinder radius="0.0762" length="0.0555"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <material name="black">
+        <color rgba="0.1 0.1 0.1 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.0762" length="0.0555"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+    </collision>
+    <inertial>
+      <mass value="1.0"/>
+      <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
+    </inertial>
+  </link>
+
+  <joint name="rear_left_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="rear_left_wheel"/>
+    <origin xyz="-0.21 0.23425 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <!-- Rear Right Wheel -->
+  <link name="rear_right_wheel">
+    <visual>
+      <geometry>
+        <cylinder radius="0.0762" length="0.0555"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <material name="black">
+        <color rgba="0.1 0.1 0.1 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.0762" length="0.0555"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+    </collision>
+    <inertial>
+      <mass value="1.0"/>
+      <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
+    </inertial>
+  </link>
+
+  <joint name="rear_right_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="rear_right_wheel"/>
+    <origin xyz="-0.21 -0.23425 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <!-- Optional: Add a direction indicator (arrow on top) -->
+  <link name="direction_indicator">
+    <visual>
+      <geometry>
+        <box size="0.15 0.03 0.01"/>  <!-- Larger arrow for better visibility -->
+      </geometry>
+      <origin xyz="0.075 0 0" rpy="0 0 0"/>
+      <material name="red">
+        <color rgba="1.0 0.2 0.2 1.0"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="direction_indicator_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="direction_indicator"/>
+    <origin xyz="0.15 0 0.11" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ============================================================ -->
+  <!-- Nav2 Sensor Frames - Added for autonomous navigation         -->
+  <!-- ============================================================ -->
+
+  <!-- Base Footprint - For Nav2 collision checking and planning -->
+  <!-- NOTE: TF Tree structure: odom → zed_camera_link → base_link → base_footprint -->
+  <!-- This is at ground level (z=0), directly below base_link -->
+  <link name="base_footprint">
+    <visual>
+      <geometry>
+        <box size="0.001 0.001 0.001"/>  <!-- Minimal visual (invisible)-->
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </visual>
+  </link>
+
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_link"/>         <!-- base_link is parent (not footprint!) -->
+    <child link="base_footprint"/>     <!-- footprint is child -->
+    <origin xyz="0 0 -0.0762" rpy="0 0 0"/>  <!-- footprint is 76.2mm BELOW base_link -->
+  </joint>
+
+  <!-- ZED2 Camera Link -->
+  <!-- CRITICAL: For ZED localization, camera_link is the ROOT of the TF tree! -->
+  <!-- ZED publishes: odom → zed_camera_link → base_link -->
+  <!-- This joint REVERSES the normal parent-child relationship -->
+  <!-- ZED2 dimensions: 175mm x 30mm x 33mm -->
+  <link name="zed_camera_link">
+    <visual>
+      <geometry>
+        <box size="0.175 0.030 0.033"/>  <!-- ZED2 camera body -->
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <material name="dark_gray">
+        <color rgba="0.3 0.3 0.3 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.175 0.030 0.033"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </collision>
+    <inertial>
+      <mass value="0.159"/>  <!-- ZED2 weight: 159g -->
+      <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
+    </inertial>
+  </link>
+
+  <joint name="zed_camera_base_joint" type="fixed">
+    <parent link="zed_camera_link"/>  <!-- Camera is PARENT (root of TF tree) -->
+    <child link="base_link"/>         <!-- base_link is CHILD -->
+    <!-- INVERSE transform: Camera is 0.23m ahead and 0.1m above base_link -->
+    <!-- So base_link is -0.23m behind and -0.1m below camera -->
+    <origin xyz="-0.23 0 -0.1" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ZED2 Left Camera (optical frame for ROS conventions) -->
+  <!-- ROS optical frame: X=right, Y=down, Z=forward -->
+  <link name="camera_left_optical_frame"/>
+  
+  <joint name="camera_left_optical_joint" type="fixed">
+    <parent link="zed_camera_link"/>  <!-- Fixed: use zed_camera_link -->
+    <child link="camera_left_optical_frame"/>
+    <!-- Transform from camera_link (X=forward) to optical (Z=forward) -->
+    <origin xyz="0 0 0" rpy="-1.5708 0 -1.5708"/>
+  </joint>
+
+  <!-- Laser/Scan Frame - Virtual 2D lidar from ZED depth -->
+  <!-- Used by depth_to_laserscan node to publish /scan topic -->
+  <link name="laser_frame">
+    <visual>
+      <geometry>
+        <cylinder radius="0.02" length="0.01"/>  <!-- Small disk to represent lidar -->
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <material name="yellow">
+        <color rgba="1.0 1.0 0.0 0.8"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="laser_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="laser_frame"/>
+    <!-- Same position as camera but at scanning plane height -->
+    <origin xyz="0.23 0 0.05" rpy="0 0 0"/>
+  </joint>
+
+  <!-- IMU Frame (ZED2 has built-in IMU) -->
+  <link name="imu_link"/>
+  
+  <joint name="imu_joint" type="fixed">
+    <parent link="zed_camera_link"/>  <!-- Fixed: use zed_camera_link -->
+    <child link="imu_link"/>
+    <!-- IMU is inside ZED2 camera body -->
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+</robot>

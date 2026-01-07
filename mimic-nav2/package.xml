@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>mimic-nav2</name>
+  <version>1.0.0</version>
+  <description>Nav2 navigation package for Mimic mecanum robot with ZED2 camera localization</description>
+  <maintainer email="achalypatel3403@gmail.com">The Mimic Robotics</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- Core ROS2 dependencies -->
+  <depend>rclcpp</depend>
+  <depend>rclpy</depend>
+  
+  <!-- Nav2 stack -->
+  <depend>nav2_bringup</depend>
+  <depend>nav2_msgs</depend>
+  <depend>nav2_common</depend>
+  <depend>nav2_util</depend>
+  <depend>navigation2</depend>
+  
+  <!-- Message types -->
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  
+  <!-- TF and state publishing -->
+  <depend>tf2_ros</depend>
+  <depend>robot_state_publisher</depend>
+  <depend>joint_state_publisher</depend>
+  
+  <!-- Launch and description -->
+  <depend>launch</depend>
+  <depend>launch_ros</depend>
+  <depend>urdf</depend>
+  <depend>xacro</depend>
+  
+  <!-- Visualization -->
+  <depend>rviz2</depend>
+  
+  <!-- ZED camera integration -->
+  <depend>zed_wrapper</depend>
+  <depend>zed_msgs</depend>
+  
+  <!-- Xbox controller teleoperation -->
+  <depend>joy</depend>
+  <depend>teleop_twist_joy</depend>
+  
+  <!-- Depth to laserscan conversion -->
+  <depend>depthimage_to_laserscan</depend>
+  
+  <!-- Topic tools for remapping -->
+  <depend>topic_tools</depend>
+  
+  <!-- Dependency on our robot driver package -->
+  <exec_depend>mimic-teleop</exec_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

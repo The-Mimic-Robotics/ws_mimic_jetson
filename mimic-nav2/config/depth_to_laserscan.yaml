@@ -1,0 +1,30 @@
+# Depth to LaserScan Configuration
+# Converts ZED2 depth image to 2D laser scan for Nav2 costmaps
+
+/**:
+  ros__parameters:
+    # Output frame for the laser scan
+    output_frame: laser_frame
+    
+    # Scan parameters
+    range_min: 0.3        # Minimum range: 30cm (match ZED min_depth)
+    range_max: 8.0        # Maximum range: 8m (match ZED max_depth)
+    
+    # Angular parameters
+    scan_height: 10       # Number of pixel rows to use from depth image
+                          # Higher = more robust but slower
+    
+    # Height range in the depth image to convert to scan
+    # This defines which "slice" of the depth image becomes the 2D scan
+    scan_time: 0.033      # Time between scans (33ms = 30Hz, matching ZED frame rate)
+    
+    # Angle range
+    angle_min: -0.7854    # -45 degrees (in radians)
+    angle_max: 0.7854     # +45 degrees (in radians)
+                          # Total: 90 degree FOV (conservative for indoor nav)
+    
+    angle_increment: 0.0087  # ~0.5 degrees per ray (180 rays total)
+    
+    # Topic names (will be remapped in launch file)
+    # input: /zed2/zed_node/depth/depth_registered
+    # output: /scan

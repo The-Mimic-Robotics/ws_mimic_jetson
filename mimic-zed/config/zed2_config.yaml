@@ -1,0 +1,26 @@
+# ZED2 Camera Configuration for Mimic Robot
+# Uses ZED SDK defaults with TF publishing enabled
+# This matches the Stereolabs example behavior
+
+/**:
+    ros__parameters:
+        general:
+            camera_name: 'zed'
+            camera_model: 'zed2'
+            grab_resolution: 'HD720'
+            grab_frame_rate: 30
+            pub_frame_rate: 15.0
+            
+        pos_tracking:
+            pos_tracking_enabled: true      # Enable positional tracking
+            publish_tf: true                # ZED publishes odom → base_link TF
+            publish_map_tf: false           # Don't publish map → odom (we use odom frame)
+            odometry_frame: 'odom'
+            base_frame: 'base_link'
+            map_frame: 'map'
+            imu_fusion: true                # Use IMU for better tracking
+            
+        depth:
+            depth_mode: 'NEURAL'            # Best quality depth
+            min_depth: 0.3                  # 30cm minimum depth
+            max_depth: 8.0                  # 8m maximum depth
